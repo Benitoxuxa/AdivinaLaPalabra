@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Palabras Saludables</title>
+    <style>
+        :root {
+            --correct-color: #6aaa64;
+            --elsewhere-color: #c9b458;
+            --absent-color: #787c7e;
+            --key-bg: #d3d6da;
+            --border-color: #d3d6da;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            height: 100vh;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .game-header h1 {
+            color: var(--correct-color);
+            margin-bottom: 10px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Espacio entre el tablero y el teclado */
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto; /* Centrar el contenedor en la página */
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            gap: 5px;
+            width: 100%;
+            max-width: 350px; /* Limitar el ancho del tablero */
+        }
+        
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+        
+        .tile {
+            aspect-ratio: 1;
+            border: 2px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: white;
+            transition: transform 0.2s, border 0.1s;
+        }
+        
+        .tile.active {
+            border-color: #888;
+            border-width: 3px;
+        }
+        
+        .tile.filled {
+            animation: pop 0.1s;
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .tile.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            animation: flip 0.5s ease forwards;
+        }
+        
+        .tile.elsewhere {
+            background-color: var(--elsewhere-color);
+            color: white;
+            border-color: var(--elsewhere-color);
+            animation: flip 0.5s ease forwards;
+        }
+        
+        .tile.absent {
+            background-color: var(--absent-color);
+            color: white;
+            border-color: var(--absent-color);
+            animation: flip 0.5s ease forwards;
+        }
+        
+        @keyframes flip {
+            0% { transform: rotateX(0); }
+            45% { transform: rotateX(90deg); }
+            55% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0); }
+        }
+        
+        .keyboard {
+            display: grid;
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            width: 100%;
+            max-width: 500px; /* Limitar el ancho del teclado */
+            touch-action: manipulation;
+        }
+        
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .key {
+            background-color: var(--key-bg);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            min-width: 40px;
+            height: 58px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+            user-select: none;
+            transition: all 0.2s ease;
+            flex: 1; /* Hace que las teclas se expandan uniformemente */
+        }
+        
+        .key:hover {
+            background-color: #bbb;
+        }
+        
+        .key:active {
+            transform: scale(0.95);
+        }
+        
+        .key.wide {
+            min-width: 65px;
+            font-size: 12px;
+            flex: 1.5;
+        }
+        
+        .key.correct {
+            background-color: var(--correct-color);
+            color: white;
+        }
+        
+        .key.elsewhere {
+            background-color: var(--elsewhere-color);
+            color: white;
+        }
+        
+        .key.absent {
+            background-color: var(--absent-color);
+            color: white;
+        }
+        
+        /* Ajustes para móviles */
+@media (max-width: 600px) {
+    .game-container {
+        max-width: 100%; /* Ocupar todo el ancho disponible */
+        padding: 10px; /* Reducir el padding */
+    }
+
+    .game-board {
+        max-width: 300px; /* Reducir el ancho del tablero */
+    }
+
+    .tile {
+        font-size: 1.5rem; /* Reducir el tamaño de la fuente */
+        aspect-ratio: 1; /* Mantener la proporción cuadrada */
+    }
+
+    .keyboard {
+        max-width: 100%; /* Ocupar todo el ancho disponible */
+        gap: 5px; /* Reducir el espacio entre teclas */
+    }
+
+    .key {
+        height: 50px; /* Reducir la altura de las teclas */
+        min-width: 30px; /* Reducir el ancho mínimo */
+        font-size: 0.9rem; /* Reducir el tamaño de la fuente */
+    }
+
+    .key.wide {
+        min-width: 50px; /* Reducir el ancho de las teclas grandes */
+        font-size: 0.8rem; /* Reducir el tamaño de la fuente */
+    }
+
+    .game-header h1 {
+        font-size: 1.5rem; /* Reducir el tamaño del título */
+    }
+
+    .category-indicator, #vidas-display, #puntuacion-display {
+        font-size: 0.9rem; /* Reducir el tamaño del texto */
+    }
+}
+        .message {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+            text-align: center;
+            pointer-events: none;
+        }
+        
+        .message.show {
+            opacity: 1;
+        }
+        
+        .game-won {
+            animation: rainbow 3s linear infinite;
+        }
+        
+        @keyframes changeColor {
+            0% { background-color: #6aaa64; } /* Verde */
+            25% { background-color: #c9b458; } /* Amarillo */
+            50% { background-color: #787c7e; } /* Gris */
+            75% { background-color: #ff6f61; } /* Rojo */
+            100% { background-color: #6aaa64; } /* Verde */
+        }
+        
+        .help-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--correct-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            animation: changeColor 5s infinite; /* Aplicar la animación */
+        }
+        
+        .help-button:hover {
+            transform: scale(1.1);
+        }
+        
+        @keyframes rainbow {
+            0% { color: #ff0000; }
+            14% { color: #ff7700; }
+            28% { color: #ffff00; }
+            42% { color: #00ff00; }
+            56% { color: #0000ff; }
+            70% { color: #8b00ff; }
+            100% { color: #ff0000; }
+        }
+        
+        .help-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--correct-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .help-button:hover {
+            transform: scale(1.1);
+        }
+        
+        #puntuacion-display {
+            font-size: 16px;
+            color: #6aaa64;
+            margin-top: 10px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        
+        .category-indicator {
+            font-size: 14px;
+            color: #6aaa64;
+            margin-bottom: 5px;
+        }
+
+        #vidas-display {
+            font-size: 16px;
+            color: #6aaa64;
+            margin-top: 10px;
+        }
+        #puntuacion-display {
+            font-size: 16px;
+            color: #6aaa64;
+            margin-top: 10px;
+        }
+        /* Contenedor del logo */
+.logo-container {
+    position: absolute; /* Posicionamiento absoluto */
+    top: 20px; /* Distancia desde la parte superior */
+    left: 20px; /* Distancia desde la izquierda */
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+}
+
+/* Estilos para la imagen del logo */
+.logo {
+    width: 95px; /* Tamaño del logo */
+    height: auto; /* Mantener la proporción */
+    border-radius: 50%; /* Opcional: Hacer el logo circular */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Sombra para un efecto visual */
+}
+
+/* Ajustes para móviles */
+@media (max-width: 600px) {
+    .logo {
+        width: 100px; /* Reducir el tamaño en móviles */
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="https://www.startpage.com/av/proxy-image?piurl=http%3A%2F%2F1.bp.blogspot.com%2F-denMicQgfE4%2FVFMkm-K-iQI%2FAAAAAAAAAWs%2FfOCAtOUP3ME%2Fs1600%2FLOGO%252BBLACK.jpg&sp=1740358032Ta2c012c8f013e08c019480e3bba6ed41308b15599a4ff42eed9036f2c222bd24" alt="Logo del juego" class="logo">
+    </div>
+
+    <button class="help-button">?</button>
+    
+    <div class="game-header">
+        <h1>VIDA SANA</h1>
+        <div class="category-indicator" id="category-display">Categoría: <span id="current-category">Cargando...</span></div>
+        <!-- Elimina esta línea -->
+        <!-- <div id="vidas-display">Vidas: <span id="vidas-count">3</span></div> -->
+        <div id="puntuacion-display">Puntuación: <span id="puntuacion-count">0</span></div>
+    </div>
+    
+    <div class="game-container">
+        <div class="game-board" id="board"></div>
+        <div class="keyboard">
+            <div class="keyboard-row">
+                <div class="key" data-key="q">q</div>
+                <div class="key" data-key="w">w</div>
+                <div class="key" data-key="e">e</div>
+                <div class="key" data-key="r">r</div>
+                <div class="key" data-key="t">t</div>
+                <div class="key" data-key="y">y</div>
+                <div class="key" data-key="u">u</div>
+                <div class="key" data-key="i">i</div>
+                <div class="key" data-key="o">o</div>
+                <div class="key" data-key="p">p</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key" data-key="a">a</div>
+                <div class="key" data-key="s">s</div>
+                <div class="key" data-key="d">d</div>
+                <div class="key" data-key="f">f</div>
+                <div class="key" data-key="g">g</div>
+                <div class="key" data-key="h">h</div>
+                <div class="key" data-key="j">j</div>
+                <div class="key" data-key="k">k</div>
+                <div class="key" data-key="l">l</div>
+                <div class="key" data-key="ñ">ñ</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key wide" data-key="enter">enter</div>
+                <div class="key" data-key="z">z</div>
+                <div class="key" data-key="x">x</div>
+                <div class="key" data-key="c">c</div>
+                <div class="key" data-key="v">v</div>
+                <div class="key" data-key="b">b</div>
+                <div class="key" data-key="n">n</div>
+                <div class="key" data-key="m">m</div>
+                <div class="key wide" data-key="backspace">⌫</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="message" id="message"></div>
+    
+    <div class="modal" id="help-modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <h2>Cómo jugar</h2>
+            <p>Adivina la palabra oculta en 6 intentos.</p>
+            <ul>
+                <li>Cada intento debe ser una palabra válida de 5 letras relacionada con salud, deportes o alimentación saludable.</li>
+                <li>Las letras cambiarán de color para mostrar qué tan cerca estás de acertar la palabra.</li>
+            </ul>
+            <div style="margin: 20px 0; display: flex; gap: 10px; align-items: center;">
+                <div style="width: 30px; height: 30px; background: var(--correct-color); display: flex; justify-content: center; align-items: center; color: white;">A</div>
+                <span>La letra está en la palabra y en la posición correcta.</span>
+            </div>
+            <div style="margin: 20px 0; display: flex; gap: 10px; align-items: center;">
+                <div style="width: 30px; height: 30px; background: var(--elsewhere-color); display: flex; justify-content: center; align-items: center; color: white;">B</div>
+                <span>La letra está en la palabra pero en una posición incorrecta.</span>
+            </div>
+            <div style="margin: 20px 0; display: flex; gap: 10px; align-items: center;">
+                <div style="width: 30px; height: 30px; background: var(--absent-color); display: flex; justify-content: center; align-items: center; color: white;">C</div>
+                <span>La letra no está en la palabra.</span>
+            </div>
+            <p>Las palabras pueden ser de las siguientes categorías:</p>
+            <ul>
+                <li>🏃‍♂️ <strong>Deportes:</strong> NADAR, CORRER, TENIS, etc.</li>
+                <li>🥗 <strong>Alimentos:</strong> YOGUR, FRUTA, AVENA, etc.</li>
+                <li>❤️ <strong>Salud:</strong> SALUD, VITAL, CALMA, etc.</li>
+            </ul>
+            <button id="new-game-btn" style="background: var(--correct-color); color: white; border: none; padding: 10px 15px; border-radius: 4px; margin-top: 20px; cursor: pointer;">Iniciar Nuevo Juego</button>
+        </div>
+    </div>
+
+    <script>
+        // Palabras disponibles por categoría
+        const WORD_LISTS = {
+            "Deportes": [
+                "NADAR", "DIETA", "SALTO", "TENIS", "BOXEO", "RITMO", "DANZA", "JUGAR", 
+                "CICLO", "REMOS", "PESAS", "BAILE", "LUCHA", "ESQUI", "GOLPE"
+            ],
+            "Alimentos": [
+                "YOGUR", "VERDE", "FRUTA", "JUGOS", "LECHE", "POLLO", "HUEVO", "AVENA", 
+                "OLIVA", "GUAVA", "FRESA", "MANGO", "ARROZ", "PASTA", "LIMON"
+            ],
+            "Salud": [
+                "SALUD", "VITAL", "PODER", "SUEÑO", "CALMA", "MENTE", "RELAX", "VIGOR", 
+                "PULSO", "VENAS", "SUDAR", "CURAR", "SANOS","FELIZ", "AGUAS", "MOVIL"
+            ]
+        };
+        
+        // Variables del juego
+        let currentRow = 0;
+        let currentTile = 0;
+        let gameOver = false;
+        let targetWord = "";
+        let currentCategory = "";
+        let vidas = 3; // Número de vidas iniciales
+        let puntuacion = 0; // Puntuación inicial
+        
+        // Elementos DOM
+        const board = document.getElementById("board");
+        const keys = document.querySelectorAll(".key");
+        const messageEl = document.getElementById("message");
+        const helpBtn = document.querySelector(".help-button");
+        const helpModal = document.getElementById("help-modal");
+        const closeModal = document.querySelector(".close-modal");
+        const newGameBtn = document.getElementById("new-game-btn");
+        const categoryDisplay = document.getElementById("current-category");
+        const vidasDisplay = document.getElementById("vidas-count");
+        
+        // Inicializar el tablero
+        function initBoard() {
+            board.innerHTML = "";
+            for (let i = 0; i < 6; i++) {
+                const row = document.createElement("div");
+                row.classList.add("row");
+                
+                for (let j = 0; j < 5; j++) {
+                    const tile = document.createElement("div");
+                    tile.classList.add("tile");
+                    tile.dataset.row = i;
+                    tile.dataset.col = j;
+                    row.appendChild(tile);
+                }
+                
+                board.appendChild(row);
+            }
+            
+            // Activar la primera fila
+            updateActiveTile();
+        }
+        
+        // Actualizar visualización de la casilla activa
+        function updateActiveTile() {
+            // Eliminar clase active de todas las casillas
+            document.querySelectorAll(".tile").forEach(tile => {
+                tile.classList.remove("active");
+            });
+            
+            // Si el juego no ha terminado y estamos en una posición válida
+            if (!gameOver && currentRow < 6 && currentTile < 5) {
+                const activeTile = document.querySelector(`.tile[data-row="${currentRow}"][data-col="${currentTile}"]`);
+                if (activeTile) {
+                    activeTile.classList.add("active");
+                }
+            }
+        }
+        
+        // Seleccionar una palabra aleatoria
+        function selectRandomWord() {
+            // Seleccionar una categoría aleatoria
+            const categories = Object.keys(WORD_LISTS);
+            currentCategory = categories[Math.floor(Math.random() * categories.length)];
+            
+            // Seleccionar una palabra aleatoria de esa categoría
+            const wordList = WORD_LISTS[currentCategory];
+            targetWord = wordList[Math.floor(Math.random() * wordList.length)];
+            
+            // Actualizar la categoría en la UI
+            categoryDisplay.textContent = currentCategory;
+            
+            console.log("Palabra objetivo:", targetWord); // Para depuración
+        }
+        
+        // Mostrar mensaje
+        function showMessage(msg, duration = 2000) {
+            messageEl.textContent = msg;
+            messageEl.classList.add("show");
+            
+            setTimeout(() => {
+                messageEl.classList.remove("show");
+            }, duration);
+        }
+        
+        // Agregar letra al tablero
+        function addLetter(letter) {
+            if (currentTile < 5 && currentRow < 6 && !gameOver) {
+                const tile = document.querySelector(`.tile[data-row="${currentRow}"][data-col="${currentTile}"]`);
+                tile.textContent = letter;
+                tile.classList.add("filled");
+                currentTile++;
+                updateActiveTile();
+            }
+        }
+        
+        // Borrar letra
+        function deleteLetter() {
+            if (currentTile > 0 && !gameOver) {
+                currentTile--;
+                const tile = document.querySelector(`.tile[data-row="${currentRow}"][data-col="${currentTile}"]`);
+                tile.textContent = "";
+                tile.classList.remove("filled");
+                updateActiveTile();
+            }
+        }
+        
+        function checkRow() {
+            if (currentTile < 5) {
+                showMessage("¡No hay suficientes letras!");
+                return;
+            }
+        
+            // Obtener la palabra del intento actual
+            let word = "";
+            for (let i = 0; i < 5; i++) {
+                const tile = document.querySelector(`.tile[data-row="${currentRow}"][data-col="${i}"]`);
+                word += tile.textContent;
+            }
+        
+            word = word.toUpperCase();
+        
+            // Verificar si la palabra es válida (está en alguna de las listas)
+            const allWords = [].concat(...Object.values(WORD_LISTS));
+            if (!allWords.includes(word)) {
+                showMessage("Palabra no válida");
+                return;
+            }
+        
+            // Animación escalonada y evaluación de letras
+            let delay = 0;
+            const delayIncrement = 200;
+        
+            // Contador para letras correctas
+            let correctCount = 0;
+        
+            // Copiar la palabra objetivo para rastrear las letras restantes
+            let remainingLetters = targetWord.split("");
+        
+            // Primer paso: marcar las letras correctas (posición exacta)
+            for (let i = 0; i < 5; i++) {
+                const tile = document.querySelector(`.tile[data-row="${currentRow}"][data-col="${i}"]`);
+                const letter = tile.textContent.toUpperCase();
+                const key = document.querySelector(`.key[data-key="${letter.toLowerCase()}"]`);
+        
+                setTimeout(() => {
+                    if (letter === targetWord[i]) {
+                        tile.classList.add("correct");
+                        key.classList.remove("elsewhere");
+                        key.classList.add("correct");
+                        correctCount++;
+        
+                        // Marcar esta letra como usada
+                        const index = remainingLetters.indexOf(letter);
+                        if (index > -1) {
+                            remainingLetters.splice(index, 1);
+                        }
+                    }
+                }, delay);
+        
+                delay += delayIncrement;
+            }
+        
+            // Segundo paso: marcar las letras en posición incorrecta o ausentes
+            delay = 0;
+            for (let i = 0; i < 5; i++) {
+                const tile = document.querySelector(`.tile[data-row="${currentRow}"][data-col="${i}"]`);
+                const letter = tile.textContent.toUpperCase();
+                const key = document.querySelector(`.key[data-key="${letter.toLowerCase()}"]`);
+        
+                setTimeout(() => {
+                    // Saltar las letras que ya han sido marcadas como correctas
+                    if (!tile.classList.contains("correct")) {
+                        const index = remainingLetters.indexOf(letter);
+                        if (index > -1) {
+                            // La letra está en la palabra pero en posición incorrecta
+                            tile.classList.add("elsewhere");
+                            if (!key.classList.contains("correct")) {
+                                key.classList.add("elsewhere");
+                            }
+                            remainingLetters.splice(index, 1);
+                        } else {
+                            // La letra no está en la palabra
+                            tile.classList.add("absent");
+                            if (!key.classList.contains("correct") && !key.classList.contains("elsewhere")) {
+                                key.classList.add("absent");
+                            }
+                        }
+                    }
+                }, delay);
+        
+                delay += delayIncrement;
+            }
+        
+            // Comprobar si se ha ganado o perdido
+            setTimeout(() => {
+                if (correctCount === 5) {
+                    // Calcular puntuación basada en los intentos restantes
+                    puntuacion += (6 - currentRow) * 10; // 10 puntos por cada intento restante
+                    document.getElementById("puntuacion-count").textContent = puntuacion;
+                    showMessage(`¡Has ganado! 🎉 Puntuación: ${puntuacion}`, 2000);
+        
+                    // Cambiar de categoría y seleccionar una nueva palabra
+                    setTimeout(() => {
+                        currentRow = 0;
+                        currentTile = 0;
+                        initBoard(); // Reiniciar el tablero
+                        selectRandomWord(); // Seleccionar nueva palabra
+                        keys.forEach(key => {
+                            key.classList.remove("correct", "elsewhere", "absent"); // Reiniciar el teclado
+                        });
+                        updateActiveTile(); // Actualizar la casilla activa
+                    }, 2000); // Esperar 2 segundos antes de reiniciar
+                } else if (currentRow >= 5) {
+                    gameOver = true;
+                    showMessage(`¡Fin del juego! La palabra era ${targetWord}`, 5000);
+                } else {
+                    currentRow++; // Avanzar a la siguiente fila
+                    currentTile = 0; // Reiniciar el contador de letras
+                    updateActiveTile(); // Actualizar la casilla activa
+                }
+            }, delay);
+        }
+            
+    
+            // Controlador de eventos del teclado
+            function handleKeyInput(key) {
+                if (gameOver) return;
+    
+                if (key === "enter") {
+                    checkRow();
+                } else if (key === "backspace") {
+                    deleteLetter();
+                } else if (/^[a-zñ]$/.test(key)) {
+                    addLetter(key);
+                }
+            }
+    
+            // Event listeners
+            keys.forEach(key => {
+                key.addEventListener("click", () => {
+                    const keyValue = key.getAttribute("data-key");
+                    handleKeyInput(keyValue);
+                });
+            });
+    
+            document.addEventListener("keydown", (e) => {
+                if (gameOver) return;
+    
+                if (e.key === "Enter") {
+                    handleKeyInput("enter");
+                } else if (e.key === "Backspace") {
+                    handleKeyInput("backspace");
+                } else if (/^[a-zñ]$/.test(e.key.toLowerCase())) {
+                    handleKeyInput(e.key.toLowerCase());
+                }
+            });
+    
+            // Funciones modales
+            helpBtn.addEventListener("click", () => {
+                helpModal.style.display = "flex";
+            });
+    
+            closeModal.addEventListener("click", () => {
+                helpModal.style.display = "none";
+            });
+    
+            window.addEventListener("click", (e) => {
+                if (e.target === helpModal) {
+                    helpModal.style.display = "none";
+                }
+            });
+    
+            // Iniciar nuevo juego
+// Iniciar nuevo juego
+function startNewGame() {
+    // Reiniciar variables del juego
+    currentRow = 0;
+    currentTile = 0;
+    gameOver = false;
+    puntuacion = 0;
+
+    // Reiniciar la interfaz
+    document.querySelector("h1").classList.remove("game-won");
+    document.getElementById("puntuacion-count").textContent = puntuacion; // Reiniciar marcador
+
+    // Restablecer el tablero
+    initBoard();
+
+    // Restablecer el teclado
+    keys.forEach(key => {
+        key.classList.remove("correct", "elsewhere", "absent");
+    });
+
+    // Seleccionar nueva palabra
+    selectRandomWord();
+
+    // Cerrar modal si está abierto
+    helpModal.style.display = "none";
+
+    // Mostrar mensaje de nuevo juego
+    showMessage("¡Nuevo juego iniciado!", 2000);
+}
+
+// Event listener para el botón de nuevo juego
+newGameBtn.addEventListener("click", startNewGame);
+    
+            // Inicializar el juego
+            initBoard();
+            selectRandomWord();
+        </script>
+    </body>
+    </html>
